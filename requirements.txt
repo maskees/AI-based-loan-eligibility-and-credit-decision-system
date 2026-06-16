@@ -1,0 +1,43 @@
+# ============================================================
+# CreditLens AI — Loan Eligibility & Credit Decision System
+# Python 3.13 | Package Manager: uv
+# ============================================================
+# Install: uv pip install -r requirements.txt
+# ============================================================
+
+# ---------- Core ML & Data Science ----------
+scikit-learn==1.6.1          # ML pipelines, preprocessing, metrics, base models
+xgboost==3.0.1               # Gradient boosted trees (primary model)
+lightgbm==4.6.0              # Fast gradient boosting (alternative model)
+optuna==4.3.0                # Bayesian hyperparameter optimization
+imbalanced-learn==0.13.0     # SMOTE for handling class imbalance
+
+# ---------- Data Processing ----------
+pandas==2.2.3                # DataFrames, data manipulation
+numpy==2.2.6                 # Numerical computing
+
+# ---------- Explainable AI (XAI) ----------
+shap==0.47.2                 # SHAP explanations (Shapley values)
+lime==0.2.0.1                # LIME local explanations
+
+# ---------- Visualization ----------
+matplotlib==3.10.3           # Static plots and charts
+seaborn==0.13.2              # Statistical visualizations
+plotly==6.1.2                # Interactive charts for dashboard
+
+# ---------- Web Application ----------
+fastapi==0.115.12            # REST API backend framework
+uvicorn[standard]==0.34.3    # ASGI server for FastAPI
+pydantic==2.11.4             # Data validation & serialization
+streamlit==1.45.1            # Interactive dashboard frontend
+httpx==0.28.1                # Async HTTP client (Streamlit → FastAPI)
+
+# ---------- Utilities ----------
+joblib==1.5.1                # Model serialization (.joblib)
+python-dotenv==1.1.0         # Environment variable management
+
+# ---------- Development & Testing ----------
+pytest==8.4.1                # Unit & integration testing
+pytest-cov==6.2.1            # Test coverage reporting
+notebook==7.4.2              # Jupyter notebooks for EDA
+ipykernel==6.29.5            # Jupyter kernel for notebooks
