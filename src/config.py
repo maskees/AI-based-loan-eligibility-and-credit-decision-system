@@ -80,8 +80,10 @@ NUMERICAL_FEATURES = [
 ENGINEERED_FEATURES = [
     "debt_to_income_ratio",
     "loan_to_income_ratio",
-    "credit_utilization",
     "employment_stability_score",
+    "credit_risk_band",
+    "loan_amount_bin",
+    "age_group",
 ]
 
 # All features used for model training

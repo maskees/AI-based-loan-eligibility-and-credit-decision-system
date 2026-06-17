@@ -56,7 +56,6 @@ def get_models() -> dict[str, Any]:
             colsample_bytree=0.8,
             random_state=RANDOM_STATE,
             eval_metric="logloss",
-            use_label_encoder=False,
             verbosity=0,
         ),
         "LightGBM": LGBMClassifier(

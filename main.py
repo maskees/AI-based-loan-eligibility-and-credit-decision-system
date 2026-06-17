@@ -31,6 +31,7 @@ from src.data.loader import (
     get_dataset_summary,
     split_data,
 )
+from src.data.merger import load_and_merge_datasets
 from src.data.preprocessor import preprocess_data
 from src.features.engineer import engineer_features
 from src.models.trainer import (
@@ -75,7 +76,16 @@ def run_pipeline(
     # Step 1: Load & Validate Data
     # -----------------------------------------------------------------------
     logger.info("\n📥 STEP 1: Loading Dataset")
-    df = load_raw_dataset()
+
+    # Check if multiple datasets are available for merged training
+    from src.config import RAW_DATA_DIR
+    csv_files = list(RAW_DATA_DIR.glob("*.csv"))
+    if len(csv_files) > 1:
+        logger.info("Found %d datasets — merging for enhanced training", len(csv_files))
+        df = load_and_merge_datasets()
+    else:
+        df = load_raw_dataset()
+
     df = validate_dataset(df)
 
     summary = get_dataset_summary(df)

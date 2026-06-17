@@ -4,6 +4,12 @@ Feature Engineering Module
 Creates derived financial features that improve model predictive power.
 These engineered features capture domain-specific relationships between
 raw features (e.g., Debt-to-Income ratio, Loan-to-Income ratio).
+
+Designed for the Kaggle Loan Approval Prediction dataset with columns:
+    person_age, person_gender, person_education, person_income,
+    person_emp_exp, person_home_ownership, loan_amnt, loan_intent,
+    loan_int_rate, loan_percent_income, cb_person_cred_hist_length,
+    credit_score, previous_loan_defaults_on_file, loan_status
 """
 
 import logging
@@ -32,18 +38,20 @@ def engineer_features(df: pd.DataFrame) -> pd.DataFrame:
         The dataset with additional engineered features.
     """
     df = df.copy()
+    initial_cols = len(df.columns)
     logger.info("Starting feature engineering on %d rows...", len(df))
 
     df = _create_debt_to_income_ratio(df)
     df = _create_loan_to_income_ratio(df)
-    df = _create_income_per_dependent(df)
     df = _create_employment_stability_score(df)
     df = _create_credit_risk_bands(df)
     df = _create_loan_amount_bins(df)
+    df = _create_age_group(df)
 
+    new_features = len(df.columns) - initial_cols
     logger.info(
         "Feature engineering complete: %d new features added",
-        df.shape[1] - len(df.columns),
+        new_features,
     )
 
     return df
@@ -52,15 +60,15 @@ def engineer_features(df: pd.DataFrame) -> pd.DataFrame:
 def _create_debt_to_income_ratio(df: pd.DataFrame) -> pd.DataFrame:
     """
     Debt-to-Income Ratio (DTI) — a key metric in lending decisions.
-    Measures what fraction of income goes toward existing debt obligations.
+    Measures what fraction of income goes toward the loan obligation.
 
-    Formula: DTI = total_debt / annual_income
+    Formula: DTI = loan_amnt / person_income
     A lower DTI signals lower financial stress.
     """
-    if "loan_amount" in df.columns and "annual_income" in df.columns:
+    if "loan_amnt" in df.columns and "person_income" in df.columns:
         df["debt_to_income_ratio"] = np.where(
-            df["annual_income"] > 0,
-            df["loan_amount"] / df["annual_income"],
+            df["person_income"] > 0,
+            df["loan_amnt"] / df["person_income"],
             0.0,
         )
         logger.info("  ✓ Created: debt_to_income_ratio")
@@ -75,13 +83,19 @@ def _create_loan_to_income_ratio(df: pd.DataFrame) -> pd.DataFrame:
     Loan-to-Income Ratio (LTI) — how large the requested loan is
     relative to the applicant's annual earnings.
 
-    Formula: LTI = loan_amount / annual_income
-    Lenders typically cap this at 4–5x.
+    Uses loan_percent_income directly if available, otherwise computes
+    loan_amnt / person_income. This is kept separate from DTI for
+    clarity and to allow independent feature selection.
     """
-    if "loan_amount" in df.columns and "annual_income" in df.columns:
+    if "loan_percent_income" in df.columns:
+        # The dataset already has this as a direct column — use it as-is
+        # and create a derived squared version for non-linearity
+        df["loan_to_income_ratio"] = df["loan_percent_income"] ** 2
+        logger.info("  ✓ Created: loan_to_income_ratio (squared loan_percent_income)")
+    elif "loan_amnt" in df.columns and "person_income" in df.columns:
         df["loan_to_income_ratio"] = np.where(
-            df["annual_income"] > 0,
-            df["loan_amount"] / df["annual_income"],
+            df["person_income"] > 0,
+            df["loan_amnt"] / df["person_income"],
             0.0,
         )
         logger.info("  ✓ Created: loan_to_income_ratio")
@@ -91,27 +105,11 @@ def _create_loan_to_income_ratio(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def _create_income_per_dependent(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Income Per Dependent — discretionary income available per family member.
-
-    Formula: income_per_dependent = annual_income / (number_of_dependents + 1)
-    The +1 accounts for the applicant themselves.
-    """
-    if "annual_income" in df.columns and "number_of_dependents" in df.columns:
-        df["income_per_dependent"] = df["annual_income"] / (
-            df["number_of_dependents"] + 1
-        )
-        logger.info("  ✓ Created: income_per_dependent")
-    else:
-        logger.warning("  ✗ Skipped income_per_dependent (missing columns)")
-
-    return df
-
-
 def _create_employment_stability_score(df: pd.DataFrame) -> pd.DataFrame:
     """
     Employment Stability Score — a binned score based on years of employment.
+
+    Uses 'person_emp_exp' column from the dataset.
 
     Bins:
         0-1 years   → 1 (Unstable)
@@ -119,18 +117,18 @@ def _create_employment_stability_score(df: pd.DataFrame) -> pd.DataFrame:
         5-9 years   → 3 (Stable)
         10+ years   → 4 (Very Stable)
     """
-    if "employment_length" in df.columns:
+    if "person_emp_exp" in df.columns:
         bins = [-np.inf, 1, 4, 9, np.inf]
         labels = [1, 2, 3, 4]
         df["employment_stability_score"] = pd.cut(
-            df["employment_length"],
+            df["person_emp_exp"],
             bins=bins,
             labels=labels,
         ).astype(float)
         logger.info("  ✓ Created: employment_stability_score")
     else:
         logger.warning(
-            "  ✗ Skipped employment_stability_score (missing 'employment_length')"
+            "  ✗ Skipped employment_stability_score (missing 'person_emp_exp')"
         )
 
     return df
@@ -167,16 +165,42 @@ def _create_loan_amount_bins(df: pd.DataFrame) -> pd.DataFrame:
     Loan Amount Bins — categorize loan amounts into buckets using quantiles.
     This helps the model capture non-linear relationships with loan size.
     """
-    if "loan_amount" in df.columns:
+    if "loan_amnt" in df.columns:
         df["loan_amount_bin"] = pd.qcut(
-            df["loan_amount"],
+            df["loan_amnt"],
             q=5,
             labels=[1, 2, 3, 4, 5],
             duplicates="drop",
         ).astype(float)
         logger.info("  ✓ Created: loan_amount_bin")
     else:
-        logger.warning("  ✗ Skipped loan_amount_bin (missing 'loan_amount')")
+        logger.warning("  ✗ Skipped loan_amount_bin (missing 'loan_amnt')")
+
+    return df
+
+
+def _create_age_group(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Age Group — bin ages into meaningful life stages.
+
+    Bins:
+        18-25  → 1 (Young Adult)
+        26-35  → 2 (Early Career)
+        36-45  → 3 (Mid Career)
+        46-55  → 4 (Senior)
+        56+    → 5 (Pre-Retirement)
+    """
+    if "person_age" in df.columns:
+        bins = [-np.inf, 25, 35, 45, 55, np.inf]
+        labels = [1, 2, 3, 4, 5]
+        df["age_group"] = pd.cut(
+            df["person_age"],
+            bins=bins,
+            labels=labels,
+        ).astype(float)
+        logger.info("  ✓ Created: age_group")
+    else:
+        logger.warning("  ✗ Skipped age_group (missing 'person_age')")
 
     return df
 
@@ -192,15 +216,11 @@ def get_engineered_feature_descriptions() -> dict[str, str]:
             "Lower values indicate less financial strain."
         ),
         "loan_to_income_ratio": (
-            "How large the loan is relative to yearly earnings. "
-            "Typically capped at 4-5x by lenders."
-        ),
-        "income_per_dependent": (
-            "Annual income divided by number of dependents (+1 for self). "
-            "Higher values mean more disposable income."
+            "Squared loan-to-income percentage, capturing non-linear "
+            "effects of high loan burden relative to income."
         ),
         "employment_stability_score": (
-            "Binned employment length: 1=Unstable (<2yr), 2=Developing (2-4yr), "
+            "Binned employment experience: 1=Unstable (<2yr), 2=Developing (2-4yr), "
             "3=Stable (5-9yr), 4=Very Stable (10+yr)."
         ),
         "credit_risk_band": (
@@ -210,5 +230,9 @@ def get_engineered_feature_descriptions() -> dict[str, str]:
         "loan_amount_bin": (
             "Loan amount bucketed into 5 quantile-based groups "
             "to capture non-linear effects."
+        ),
+        "age_group": (
+            "Age categorized into life stages: 1=Young Adult, "
+            "2=Early Career, 3=Mid Career, 4=Senior, 5=Pre-Retirement."
         ),
     }
