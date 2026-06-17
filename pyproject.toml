@@ -1,7 +1,67 @@
 [project]
-name = "capstone-project"
+name = "creditlens-ai"
 version = "0.1.0"
-description = "Add your description here"
+description = "AI-Powered Loan Eligibility & Credit Decision System with Explainable AI (SHAP + LIME)"
 readme = "README.md"
-requires-python = ">=3.13"
-dependencies = []
+requires-python = ">=3.12"
+license = "MIT"
+authors = [
+    { name = "Shaksham" },
+]
+keywords = [
+    "machine-learning",
+    "loan-approval",
+    "credit-risk",
+    "explainable-ai",
+    "shap",
+    "lime",
+    "fastapi",
+    "streamlit",
+    "xgboost",
+    "capstone-project",
+]
+
+dependencies = [
+    # Core ML & Data Science
+    "scikit-learn>=1.6.1",
+    "xgboost>=3.0.1",
+    "lightgbm>=4.6.0",
+    "optuna>=4.3.0",
+    "imbalanced-learn>=0.13.0",
+
+    # Data Processing
+    "pandas>=2.2.3",
+    "numpy>=2.2.6",
+
+    # Explainable AI (XAI)
+    "shap>=0.47.2",
+    "lime>=0.2.0.1",
+
+    # Visualization
+    "matplotlib>=3.10.3",
+    "seaborn>=0.13.2",
+    "plotly>=6.1.2",
+
+    # Web Application
+    "fastapi>=0.115.12",
+    "uvicorn[standard]>=0.34.3",
+    "pydantic>=2.11.4",
+    "streamlit>=1.45.1",
+    "httpx>=0.28.1",
+
+    # Utilities
+    "joblib>=1.5.1",
+    "python-dotenv>=1.1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.4.1",
+    "pytest-cov>=6.2.1",
+    "notebook>=7.4.2",
+    "ipykernel>=6.29.5",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

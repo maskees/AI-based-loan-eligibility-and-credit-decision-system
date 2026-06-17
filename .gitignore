@@ -1,10 +1,85 @@
-# Python-generated files
-__pycache__/
-*.py[oc]
-build/
-dist/
-wheels/
-*.egg-info
+# ============================================================
+# CreditLens AI — .gitignore
+# Python / ML / Data Science Project
+# ============================================================
 
-# Virtual environments
-.venv
+# ---------- Python ----------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+*.whl
+
+# ---------- Virtual Environment ----------
+.venv/
+venv/
+env/
+ENV/
+
+# ---------- Environment Variables ----------
+.env
+*.env
+!.env.example
+
+# ---------- Jupyter Notebooks ----------
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# ---------- IDE ----------
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+
+# ---------- OS ----------
+.DS_Store
+Thumbs.db
+desktop.ini
+*.tmp
+
+# ---------- ML Models (large binary files) ----------
+models/*.joblib
+models/*.pkl
+models/*.h5
+models/*.onnx
+!models/.gitkeep
+
+# ---------- Data (large CSV files) ----------
+data/raw/*.csv
+data/raw/*.xlsx
+data/raw/*.json
+data/processed/*.csv
+data/processed/*.parquet
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+
+# ---------- Reports (generated outputs) ----------
+reports/*.png
+reports/*.jpg
+reports/*.pdf
+reports/figures/
+!reports/.gitkeep
+
+# ---------- Logs ----------
+*.log
+logs/
+
+# ---------- uv ----------
+uv.lock
+
+# ---------- Optuna ----------
+*.db
+optuna_studies/
+
+# ---------- Misc ----------
+*.bak
+*.orig
+.cache/
