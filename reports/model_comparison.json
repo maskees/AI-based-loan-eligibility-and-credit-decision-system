@@ -1,5 +1,14 @@
 [
   {
+    "Model": "LightGBM",
+    "Accuracy": 0.9359,
+    "Precision": 0.9101,
+    "Recall": 0.7873,
+    "F1-Score": 0.8442,
+    "AUC-ROC": 0.9736,
+    "Log Loss": 0.1582
+  },
+  {
     "Model": "XGBoost",
     "Accuracy": 0.9265,
     "Precision": 0.894,
@@ -7,15 +16,6 @@
     "F1-Score": 0.8196,
     "AUC-ROC": 0.9621,
     "Log Loss": 0.1897
-  },
-  {
-    "Model": "LightGBM",
-    "Accuracy": 0.9262,
-    "Precision": 0.8999,
-    "Recall": 0.7487,
-    "F1-Score": 0.8174,
-    "AUC-ROC": 0.9615,
-    "Log Loss": 0.1895
   },
   {
     "Model": "Random Forest",
