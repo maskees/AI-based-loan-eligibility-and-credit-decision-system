@@ -19,7 +19,7 @@ from src.config import (
     OPTUNA_N_TRIALS,
     OPTUNA_TIMEOUT,
     RANDOM_STATE,
-    SCORING_METRIC,
+    PRIMARY_METRIC,
 )
 
 logger = logging.getLogger(__name__)
@@ -46,7 +46,6 @@ def _xgboost_objective(
         "reg_lambda": trial.suggest_float("reg_lambda", 1e-8, 10.0, log=True),
         "random_state": RANDOM_STATE,
         "eval_metric": "logloss",
-        "use_label_encoder": False,
         "verbosity": 0,
     }
 
@@ -54,7 +53,7 @@ def _xgboost_objective(
     scores = cross_val_score(
         model, X, y,
         cv=CV_FOLDS,
-        scoring=SCORING_METRIC,
+        scoring=PRIMARY_METRIC,
         n_jobs=-1,
     )
 
@@ -85,7 +84,7 @@ def _lightgbm_objective(
     scores = cross_val_score(
         model, X, y,
         cv=CV_FOLDS,
-        scoring=SCORING_METRIC,
+        scoring=PRIMARY_METRIC,
         n_jobs=-1,
     )
 
@@ -134,7 +133,7 @@ def tune_model(
 
     logger.info("=" * 60)
     logger.info("HYPERPARAMETER TUNING: %s", model_name)
-    logger.info("Trials: %d | Timeout: %ds | Metric: %s", n_trials, timeout, SCORING_METRIC)
+    logger.info("Trials: %d | Timeout: %ds | Metric: %s", n_trials, timeout, PRIMARY_METRIC)
     logger.info("=" * 60)
 
     # Select objective function
@@ -161,7 +160,7 @@ def tune_model(
     best_params = study.best_params
     best_score = study.best_value
 
-    logger.info("Best %s score: %.4f", SCORING_METRIC, best_score)
+    logger.info("Best %s score: %.4f", PRIMARY_METRIC, best_score)
     logger.info("Best parameters: %s", best_params)
 
     # Train the final model with best params
@@ -169,7 +168,6 @@ def tune_model(
         best_params.update({
             "random_state": RANDOM_STATE,
             "eval_metric": "logloss",
-            "use_label_encoder": False,
             "verbosity": 0,
         })
     elif model_name == "LightGBM":

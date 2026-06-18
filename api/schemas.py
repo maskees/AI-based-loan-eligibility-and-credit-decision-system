@@ -5,7 +5,7 @@ Defines request and response models for data validation and serialization.
 """
 
 from datetime import datetime
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -140,8 +140,6 @@ class ExplainRequest(BaseModel):
 class TopFactor(BaseModel):
     """A single contributing factor in the prediction explanation."""
 
-    feature: str
-    """Schema for a feature's contribution to the prediction."""
     feature: str = Field(..., description="Name of the feature")
     shap_value: float | None = Field(None, description="SHAP value contribution")
     impact: str = Field(..., description="Direction of impact (Positive/Negative/Neutral)")
@@ -167,13 +165,6 @@ class PredictionResponse(BaseModel):
     timestamp: datetime = Field(
         default_factory=datetime.now, description="Prediction timestamp"
     )
-
-
-class ExplainRequest(BaseModel):
-    """Schema for requesting model explanations."""
-    application: LoanApplication
-    method: Literal["shap", "lime", "both"] = Field(default="shap")
-    top_n_features: int = Field(default=5, ge=1, le=20)
 
 
 class ExplainResponse(BaseModel):
