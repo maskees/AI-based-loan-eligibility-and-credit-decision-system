@@ -22,6 +22,7 @@ class TestRootEndpoint:
         assert "docs" in data
 
     def test_docs_accessible(self):
+        # pyrefly: ignore [missing-import]
         from api.main import app
 
         client = TestClient(app)

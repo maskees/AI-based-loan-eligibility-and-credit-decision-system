@@ -1,38 +1,38 @@
 [
   {
-    "Model": "LightGBM",
-    "Accuracy": 0.9363,
-    "Precision": 0.9154,
-    "Recall": 0.7838,
-    "F1-Score": 0.8445,
-    "AUC-ROC": 0.9736,
-    "Log Loss": 0.1579
+    "Model": "XGBoost",
+    "Accuracy": 0.9265,
+    "Precision": 0.894,
+    "Recall": 0.7566,
+    "F1-Score": 0.8196,
+    "AUC-ROC": 0.9621,
+    "Log Loss": 0.1897
   },
   {
-    "Model": "XGBoost",
-    "Accuracy": 0.9245,
-    "Precision": 0.8907,
-    "Recall": 0.7499,
-    "F1-Score": 0.8142,
-    "AUC-ROC": 0.9616,
-    "Log Loss": 0.1905
+    "Model": "LightGBM",
+    "Accuracy": 0.9262,
+    "Precision": 0.8999,
+    "Recall": 0.7487,
+    "F1-Score": 0.8174,
+    "AUC-ROC": 0.9615,
+    "Log Loss": 0.1895
   },
   {
     "Model": "Random Forest",
     "Accuracy": 0.8968,
-    "Precision": 0.7599,
-    "Recall": 0.7779,
-    "F1-Score": 0.7688,
+    "Precision": 0.7601,
+    "Recall": 0.7776,
+    "F1-Score": 0.7687,
     "AUC-ROC": 0.9459,
-    "Log Loss": 0.2893
+    "Log Loss": 0.2892
   },
   {
     "Model": "Logistic Regression",
     "Accuracy": 0.8132,
     "Precision": 0.5528,
-    "Recall": 0.801,
-    "F1-Score": 0.6542,
+    "Recall": 0.8016,
+    "F1-Score": 0.6543,
     "AUC-ROC": 0.8952,
-    "Log Loss": 0.3983
+    "Log Loss": 0.3984
   }
 ]
