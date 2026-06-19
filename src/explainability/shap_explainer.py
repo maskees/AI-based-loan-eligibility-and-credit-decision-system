@@ -89,9 +89,13 @@ class SHAPExplainer:
         logger.info("Computing SHAP values for %d samples...", X.shape[0])
         self.shap_values = self.explainer.shap_values(X)
 
-        # For binary classification, shap_values may be a list [class_0, class_1]
+        # For binary classification, shap_values may be:
+        #   - a list [class_0_array, class_1_array]  → take index [1]
+        #   - a 3-D ndarray of shape (n_samples, n_features, n_classes) → take [..., 1]
         if isinstance(self.shap_values, list):
             self.shap_values = self.shap_values[1]  # Positive class
+        elif self.shap_values.ndim == 3:
+            self.shap_values = self.shap_values[..., 1]  # Positive class
 
         logger.info("SHAP values computed ✓ Shape: %s", self.shap_values.shape)
         return self.shap_values
@@ -212,13 +216,14 @@ class SHAPExplainer:
 
         features = []
         for idx in top_indices:
-            name = self.feature_names[idx] if self.feature_names else f"feature_{idx}"
-            shap_val = float(values[idx])
+            i = int(idx)  # ensure plain Python int for list indexing
+            name = self.feature_names[i] if self.feature_names else f"feature_{i}"
+            shap_val = float(values[i])
             features.append({
                 "feature": name,
                 "shap_value": round(shap_val, 4),
                 "impact": "positive" if shap_val > 0 else "negative",
-                "feature_value": float(self.X_data[sample_index, idx]),
+                "feature_value": float(self.X_data[sample_index, i]),
             })
 
         return features
@@ -240,13 +245,123 @@ class SHAPExplainer:
 
         importances = []
         for idx in indices:
-            name = self.feature_names[idx] if self.feature_names else f"feature_{idx}"
+            i = int(idx)  # ensure plain Python int for list indexing
+            name = self.feature_names[i] if self.feature_names else f"feature_{i}"
             importances.append({
                 "feature": name,
-                "importance": round(float(mean_abs_shap[idx]), 4),
+                "importance": round(float(mean_abs_shap[i]), 4),
             })
 
         return importances
+
+    def plot_force(
+        self,
+        sample_index: int = 0,
+        matplotlib: bool = True,
+        save: bool = True,
+    ) -> Any:
+        """
+        Generate a SHAP force plot for a single prediction.
+
+        Force plots show how features push the prediction from the base
+        value toward the final output. Best viewed in Jupyter notebooks
+        with ``shap.initjs()`` called first.
+
+        Parameters
+        ----------
+        sample_index : int
+            Index of the sample in X_data to explain.
+        matplotlib : bool
+            If True, render as a matplotlib figure (static).
+            If False, return an interactive HTML object (for notebooks).
+        save : bool
+            Whether to save the plot (only works with matplotlib=True).
+
+        Returns
+        -------
+        matplotlib Figure or shap ForcePlot object
+        """
+        if self.shap_values is None:
+            self.compute_shap_values()
+
+        base_value = (
+            self.explainer.expected_value
+            if not isinstance(self.explainer.expected_value, list)
+            else self.explainer.expected_value[1]
+        )
+
+        if matplotlib:
+            fig, ax = plt.subplots(figsize=(14, 3))
+            shap.force_plot(
+                base_value,
+                self.shap_values[sample_index],
+                self.X_data[sample_index],
+                feature_names=self.feature_names,
+                matplotlib=True,
+                show=False,
+            )
+            plt.title(
+                f"SHAP Force Plot — Applicant #{sample_index + 1}",
+                fontsize=12,
+                pad=40,
+            )
+            plt.tight_layout()
+
+            if save:
+                self._save_figure(f"shap_force_sample_{sample_index}.png")
+
+            return fig
+        else:
+            # Interactive HTML version for notebooks
+            return shap.force_plot(
+                base_value,
+                self.shap_values[sample_index],
+                self.X_data[sample_index],
+                feature_names=self.feature_names,
+            )
+
+    def get_explanation_object(
+        self,
+        sample_index: int | None = None,
+    ) -> shap.Explanation:
+        """
+        Return a full ``shap.Explanation`` object for native SHAP
+        visualisation in Jupyter notebooks.
+
+        Parameters
+        ----------
+        sample_index : int, optional
+            If provided, returns an Explanation for a single sample.
+            If None, returns the Explanation for all samples.
+
+        Returns
+        -------
+        shap.Explanation
+            A SHAP Explanation object compatible with all shap plot functions.
+        """
+        if self.shap_values is None:
+            self.compute_shap_values()
+
+        base_value = (
+            self.explainer.expected_value
+            if not isinstance(self.explainer.expected_value, list)
+            else self.explainer.expected_value[1]
+        )
+
+        if sample_index is not None:
+            return shap.Explanation(
+                values=self.shap_values[sample_index],
+                base_values=base_value,
+                data=self.X_data[sample_index],
+                feature_names=self.feature_names,
+            )
+        else:
+            return shap.Explanation(
+                values=self.shap_values,
+                base_values=np.full(self.shap_values.shape[0], base_value),
+                data=self.X_data,
+                feature_names=self.feature_names,
+            )
 
     def _save_figure(self, filename: str) -> None:
         """Save the current matplotlib figure to reports directory."""

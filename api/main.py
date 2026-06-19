@@ -9,6 +9,7 @@ Run with:
 """
 
 import logging
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -22,6 +23,23 @@ from src.config import API_VERSION, LOG_FORMAT, LOG_LEVEL
 # ---------------------------------------------------------------------------
 logging.basicConfig(level=LOG_LEVEL, format=LOG_FORMAT)
 logger = logging.getLogger(__name__)
+
+
+# ---------------------------------------------------------------------------
+# Lifespan event handler (replaces deprecated @app.on_event)
+# ---------------------------------------------------------------------------
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Application lifespan: runs startup logic, then yields, then shutdown."""
+    logger.info("=" * 60)
+    logger.info("CreditLens AI API — Starting up")
+    logger.info("API Version: %s", API_VERSION)
+    logger.info("Docs: http://localhost:8000/docs")
+    logger.info("=" * 60)
+    yield
+    # Shutdown logic (if needed) goes here
+    logger.info("CreditLens AI API — Shutting down")
+
 
 # ---------------------------------------------------------------------------
 # Create FastAPI application
@@ -38,6 +56,7 @@ app = FastAPI(
     version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc",
+    lifespan=lifespan,
 )
 
 # ---------------------------------------------------------------------------
@@ -121,15 +140,3 @@ async def model_info():
         )
 
 
-# ---------------------------------------------------------------------------
-# Startup event
-# ---------------------------------------------------------------------------
-
-@app.on_event("startup")
-async def startup_event():
-    """Log startup information."""
-    logger.info("=" * 60)
-    logger.info("CreditLens AI API — Starting up")
-    logger.info("API Version: %s", API_VERSION)
-    logger.info("Docs: http://localhost:8000/docs")
-    logger.info("=" * 60)

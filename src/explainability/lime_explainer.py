@@ -260,3 +260,83 @@ class LIMEExplainer:
         )
 
         return result
+
+    def explain_and_compare(
+        self,
+        instance: np.ndarray,
+        shap_explainer: Any,
+        num_features: int = 10,
+    ) -> dict[str, Any]:
+        """
+        Generate both LIME and SHAP explanations for a single instance
+        and return them in a structured dict for side-by-side comparison.
+
+        Parameters
+        ----------
+        instance : np.ndarray
+            A single data point (1D array) to explain.
+        shap_explainer : SHAPExplainer
+            An initialised ``SHAPExplainer`` instance (from
+            ``src.explainability.shap_explainer``).
+        num_features : int
+            Number of top features to include.
+
+        Returns
+        -------
+        dict
+            Contains ``lime_explanation``, ``shap_explanation``,
+            ``prediction``, and ``comparison_table``.
+        """
+        # LIME explanation
+        lime_explanation = self.get_explanation_as_list(instance, num_features)
+
+        # SHAP explanation
+        shap_top = shap_explainer.get_top_features(0, num_features)
+
+        # Prediction
+        proba = self.model.predict_proba(instance.reshape(1, -1))[0]
+        prediction_class = self.class_names[proba.argmax()]
+
+        # Build comparison table
+        comparison = []
+        lime_dict = {
+            e["feature_rule"].split(" ")[0]: e for e in lime_explanation
+        }
+        shap_dict = {s["feature"]: s for s in shap_top}
+
+        all_features = list(
+            dict.fromkeys(
+                [s["feature"] for s in shap_top]
+                + [e["feature_rule"] for e in lime_explanation]
+            )
+        )
+
+        for feat in all_features:
+            row = {"feature": feat}
+            if feat in shap_dict:
+                row["shap_value"] = shap_dict[feat]["shap_value"]
+                row["shap_impact"] = shap_dict[feat]["impact"]
+            if feat in lime_dict:
+                row["lime_contribution"] = lime_dict[feat]["contribution"]
+                row["lime_impact"] = lime_dict[feat]["impact"]
+            comparison.append(row)
+
+        result = {
+            "prediction": prediction_class,
+            "probability": {
+                name: round(float(p), 4)
+                for name, p in zip(self.class_names, proba)
+            },
+            "lime_explanation": lime_explanation,
+            "shap_explanation": shap_top,
+            "comparison_table": comparison,
+        }
+
+        logger.info(
+            "SHAP vs LIME comparison generated for instance "
+            "(prediction: %s, P=%.4f)",
+            prediction_class,
+            float(proba.max()),
+        )
+
+        return result

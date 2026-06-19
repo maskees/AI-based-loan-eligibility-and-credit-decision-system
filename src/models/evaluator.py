@@ -288,6 +288,79 @@ def plot_metrics_comparison(
     return fig
 
 
+def generate_full_report(
+    trained_models: dict[str, Any],
+    X_test: np.ndarray,
+    y_test: np.ndarray,
+    save_plots: bool = True,
+) -> dict[str, Any]:
+    """
+    Run the complete evaluation pipeline in one call: evaluate all models,
+    create comparison table, and generate all visualisation plots.
+
+    Parameters
+    ----------
+    trained_models : dict[str, estimator]
+        Dictionary of model name → fitted model.
+    X_test : np.ndarray
+        Test feature matrix.
+    y_test : np.ndarray
+        True test labels.
+    save_plots : bool
+        Whether to save the generated plots to disk.
+
+    Returns
+    -------
+    dict
+        Comprehensive report containing:
+        - ``results``: per-model evaluation dicts
+        - ``comparison_df``: pandas DataFrame of metrics
+        - ``best_model``: name of the top-performing model
+        - ``best_auc_roc``: AUC-ROC score of the best model
+        - ``figures``: dict of matplotlib Figure objects
+    """
+    logger.info("=" * 60)
+    logger.info("GENERATING FULL EVALUATION REPORT")
+    logger.info("=" * 60)
+
+    # Evaluate
+    results = evaluate_all_models(trained_models, X_test, y_test)
+    comparison_df = create_comparison_table(results)
+
+    # Plots
+    figures = {
+        "confusion_matrices": plot_confusion_matrices(results, y_test, save=save_plots),
+        "roc_curves": plot_roc_curves(results, y_test, save=save_plots),
+        "precision_recall_curves": plot_precision_recall_curves(results, y_test, save=save_plots),
+        "metrics_comparison": plot_metrics_comparison(comparison_df, save=save_plots),
+    }
+
+    # Best model info
+    best_model_name = results[0]["model_name"]
+    best_auc = results[0]["roc_auc"]
+
+    # Save comparison JSON
+    if save_plots:
+        import json
+        REPORTS_DIR.mkdir(parents=True, exist_ok=True)
+        comparison_json = comparison_df.reset_index().to_dict(orient="records")
+        json_path = REPORTS_DIR / "model_comparison.json"
+        with open(json_path, "w") as f:
+            json.dump(comparison_json, f, indent=2)
+        logger.info("Saved comparison JSON → %s", json_path)
+
+    logger.info("🏆 Best model: %s (AUC-ROC = %.4f)", best_model_name, best_auc)
+    logger.info("=" * 60)
+
+    return {
+        "results": results,
+        "comparison_df": comparison_df,
+        "best_model": best_model_name,
+        "best_auc_roc": best_auc,
+        "figures": figures,
+    }
+
+
 def _get_probabilities(model: Any, X: np.ndarray) -> np.ndarray | None:
     """Safely extract probability predictions for the positive class."""
     try:
